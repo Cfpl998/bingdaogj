@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>巴沙鱼导航</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:system-ui,sans-serif}
+html,body{height:100%;overflow:hidden;background:#0a0a12;color:#fff}
+/* 垂直线性布局 */
+body{display:flex;flex-direction:column}
+
+/* 顶部标题栏（窄高度小空间） */
+.header{
+    padding:13px 20px;
+    background:rgba(255,255,255,0.05);
+    border-bottom:1px solid rgba(255,255,255,0.1);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    text-align:center;
+    font-size:16px;
+    font-weight:500;
+    letter-spacing:1px;
+}
+
+/* 内容区 占满剩余全部空间 */
+.content{
+    flex:1;
+    position:relative;
+    width:100%;
+}
+
+#siteFrame{
+    width:100%;
+    height:100%;
+    border:none;
+    display:block;
+    background:#fff;
+}
+
+/* 无网络加载失败提示 */
+.error-tip{
+    position:absolute;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    background:#0a0a12;
+    z-index:10;
+}
+.error-tip h3{
+    color:#ff5252;
+    font-size:20px;
+    margin-bottom:10px;
+}
+.error-tip p{
+    opacity:0.7;
+    font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<!-- 顶部标题 -->
+<div class="header">B里B里</div>
+
+<!-- 主体内容区 -->
+<div class="content">
+    <iframe id="siteFrame" src="https://1anime.me/vodtype/20.html"></iframe>
+    <div class="error-tip" id="errorTip">
+        <h3>网络连接失败</h3>
+        <p>请检查网络后刷新页面重试</p>
+    </div>
+</div>
+
+<script>
+const iframe = document.getElementById('siteFrame');
+const errorTip = document.getElementById('errorTip');
+let loadSuccess = false;
+
+// 加载成功标记
+iframe.onload = ()=>{
+    loadSuccess = true;
+};
+
+// 8秒超时检测：加载失败显示提示
+setTimeout(()=>{
+    if(!loadSuccess){
+        errorTip.style.display = 'flex';
+    }
+}, 8000);
+
+// 监听系统网络状态
+window.addEventListener('offline', ()=>{
+    errorTip.style.display = 'flex';
+});
+window.addEventListener('online', ()=>{
+    if(loadSuccess) errorTip.style.display = 'none';
+});
+</script>
+</body>
+</html>

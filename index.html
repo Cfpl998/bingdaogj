@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>冰岛工具箱</title>
+
+<style>
+/* ══════════════════════════════════════════════════════════════ */
+/*  📐 全局变量配置区 — 修改此处即可自定义颜色、间距、圆角等      */
+/* ══════════════════════════════════════════════════════════════ */
+:root {
+  --bg-deep:        #050510;
+  --bg-dark:        #08081a;
+  --accent:         #4facfe;
+  --accent-alt:     #00f2fe;
+  --glass-bg:       rgba(255, 255, 255, 0.035);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-border:   rgba(255, 255, 255, 0.08);
+  --glass-hi:       rgba(255, 255, 255, 0.12);
+  --glass-blur:     16px;
+  --text-primary:   #e8eaed;
+  --text-secondary: #8b8fa3;
+  --text-dim:       #505468;
+  --radius-lg:      24px;
+  --radius-md:      20px;
+  --radius-sm:      14px;
+  --shadow-card:    0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
+  --shadow-hover:   0 12px 48px rgba(0,0,0,0.45), 0 4px 16px rgba(79,172,254,0.08);
+  --max-width:      1240px;
+  --sidebar-w:      272px;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  🔄 基础重置                                                  */
+/* ══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+img { max-width:100%; display:block; }
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:3px; }
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  🧊 液态玻璃通用类                                            */
+/* ══════════════════════════════════════════════════════════════ */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+.glass::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-hi), transparent);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  ⏳ 加载动画                                                  */
+/* ══════════════════════════════════════════════════════════════ */
+#loadingScreen {
+  position: fixed; inset:0; z-index: 100000;
+  background: var(--bg-deep);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#loadingScreen.hide { opacity:0; visibility:hidden; pointer-events:none; }
+.loading-icon {
+  width:56px; height:56px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+  border-radius: 16px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px;
+  animation: loadPulse 1.4s ease-in-out infinite;
+}
+@keyframes loadPulse {
+  0%,100% { transform:scale(1) rotate(0deg); opacity:1; }
+  50% { transform:scale(1.12) rotate(6deg); opacity:.7; }
+}
+.loading-bar {
+  width:140px; height:3px; margin-top:24px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px; overflow:hidden;
+}
+.loading-bar-inner {
+  width:0; height:100%; border-radius:3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-alt));
+  animation: loadFill 1.6s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes loadFill { to { width:100%; } }
+.loading-text {
+  margin-top:16px; font-size:12px;
+  color: var(--text-dim); letter-spacing:2px;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  🎨 背景特效层                                                */
+/* ══════════════════════════════════════════════════════════════ */
+#particleCanvas {
+  position: fixed; inset:0; z-index:0;
+  pointer-events: none;
+}
+.bg-orbs { position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+.bg-orb {
+  position:absolute; border-radius:50%;
+  filter:blur(100px); opacity:.35;
+}
+.bg-orb:nth-child(1) {
+  width:500px; height:500px; top:-10%; left:15%;
+  background: radial-gradient(circle, rgba(79,172,254,.35), transparent 70%);
+  animation: orbFloat1 18s ease-in-out infinite alternate;
+}
+.bg-orb:nth-child(2) {
+  width:400px; height:400px; bottom:5%; right:10%;
+  background: radial-gradient(circle, rgba(0,242,254,.25), transparent 70%);
+  animation: orbFloat2 22s ease-in-out infinite alternate;
+}
+.bg-orb:nth-child(3) {
+  width:350px; height:350px; top:50%; left:60%;
+  background: radial-gradient(circle, rgba(102,126,234,.2), transparent 70%);
+  animation: orbFloat3 20s ease-in-out infinite alternate;
+}
+@keyframes orbFloat1 { 0%{transform:translate(0,0)} 100%{transform:translate(60px,80px)} }
+@keyframes orbFloat2 { 0%{transform:translate(0,0)} 100%{transform:translate(-50px,-60px)} }
+@keyframes orbFloat3 { 0%{transform:translate(0,0)} 100%{transform:translate(-40px,50px)} }
+
+/* 鼠标跟随光效 */
+.mouse-glow {
+  position: fixed; width:600px; height:600px;
+  border-radius:50%; pointer-events:none; z-index:1;
+  background: radial-gradient(circle, rgba(79,172,254,.06) 0%, transparent 70%);
+  transform: translate(-50%,-50%);
+  transition: opacity .4s;
+  opacity:0;
+}
+.mouse-glow.active { opacity:1; }
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  📂 侧边栏                                                    */
+/* ══════════════════════════════════════════════════════════════ */
+.sidebar-backdrop {
+  position:fixed; inset:0; z-index:900;
+  background:rgba(0,0,0,.55);
+  opacity:0; visibility:hidden; pointer-events:none;
+  transition: opacity .35s ease, visibility .35s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.sidebar-backdrop.open { opacity:1; visibility:visible; pointer-events:auto; }
+
+.sidebar {
+  position:fixed; top:0; left:0;
+  width:var(--sidebar-w); height:100vh;
+  z-index:1000;
+  transform:translateX(-110%);
+  transition: transform .45s cubic-bezier(.32,.72,0,1);
+  background: rgba(12,12,30,.82);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border-right: 1px solid rgba(255,255,255,.06);
+  display:flex; flex-direction:column;
+  overflow-y:auto;
+  padding: 24px 16px;
+}
+.sidebar.open { transform:translateX(0); }
+
+.sidebar-logo {
+  display:flex; align-items:center; gap:12px;
+  padding:8px 12px; margin-bottom:8px;
+}
+.sidebar-logo-icon {
+  width:40px; height:40px; border-radius:12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+}
+.sidebar-logo-text {
+  font-size:18px; font-weight:700;
+  background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.sidebar-divider {
+  height:1px; margin:12px 16px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+}
+.sidebar-label {
+  font-size:11px; font-weight:600;
+  color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:1.5px; padding:8px 16px 6px;
+}
+.sidebar-link {
+  display:flex; align-items:center; gap:12px;
+  padding:11px 16px; border-radius:12px;
+  color:var(--text-secondary);
+  transition: all .2s ease;
+  font-size:14px; width:100%; text-align:left;
+}
+.sidebar-link:hover, .sidebar-link:focus-visible {
+  background:rgba(255,255,255,.06);
+  color:var(--text-primary);
+}
+.sidebar-link .link-icon {
+  width:20px; height:20px; display:flex;
+  align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  🔘 侧边栏开关按钮                                            */
+/* ══════════════════════════════════════════════════════════════ */
+.sidebar-toggle {
+  position:fixed; top:20px; left:20px; z-index:950;
+  width:46px; height:46px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border:1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  transition: all .25s ease;
+  color:var(--text-secondary);
+}
+.sidebar-toggle:hover {
+  background:var(--glass-bg-hover);
+  color:var(--text-primary);
+  box-shadow: var(--shadow-hover);
+}
+.sidebar-toggle:active { transform:scale(.92); }
+.sidebar-toggle svg { width:20px; height:20px; }
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  📄 主内容区                                                  */
+/* ══════════════════════════════════════════════════════════════ */
+.main-content {
+  position: relative; z-index:2;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 80px 24px 40px;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  👋 欢迎卡片                                                  */
+/* ══════════════════════════════════════════════════════════════ */
+.welcome-card {
+  padding: 48px 40px;
+  text-align: center;
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+/* 流光效果 */
+.welcome-card::before {
+  content:'';
+  position:absolute; top:-100%; left:-100%;
+  width:300%; height:300%;
+  background: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgba(79,172,254,.04) 45%,
+    rgba(0,242,254,.06) 50%,
+    rgba(79,172,254,.04) 55%,
+    transparent 60%
+  );
+  animation: welcomeShine 6s ease-in-out infinite;
+  pointer-events:none;
+  z-index:0;
+}
+@keyframes welcomeShine {
+  0% { transform: translateX(-30%) translateY(-30%) rotate(0deg); }
+  100% { transform: translateX(30%) translateY(30%) rotate(0deg); }
+}
+.welcome-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 16px; border-radius:20px;
+  background:rgba(52,199,89,.1);
+  border:1px solid rgba(52,199,89,.2);
+  font-size:12px; color:#34c759;
+  margin-bottom:20px; position:relative; z-index:1;
+}
+.status-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:#34c759;
+  animation: statusBlink 2s ease-in-out infinite;
+}
+@keyframes statusBlink {
+  0%,100%{opacity:1} 50%{opacity:.4}
+}
+.welcome-logo {
+    position: relative;
+    z-index: 1;
+    margin: 0 auto 16px;
+    width: 72px;
+    height: 72px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(79,172,254,.25);
+    overflow: hidden;
+}
+
+
+.welcome-logo svg { width:36px; height:36px; }
+.welcome-title {
+  position:relative; z-index:1;
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight:800; letter-spacing:-0.5px;
+  background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent-alt) 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+  margin-bottom:8px;
+}
+.welcome-subtitle {
+  position:relative; z-index:1;
+  font-size:16px; color:var(--text-secondary);
+  margin-bottom:16px;
+}
+.welcome-meta {
+  position:relative; z-index:1;
+  display:flex; align-items:center;
+  justify-content:center; gap:12px; flex-wrap:wrap;
+}
+.version-badge {
+  padding:4px 12px; border-radius:8px;
+  background:rgba(79,172,254,.1);
+  border:1px solid rgba(79,172,254,.2);
+  font-size:12px; color:var(--accent); font-weight:600;
+}
+.announce-text {
+  font-size:13px; color:var(--text-dim);
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  🔍 搜索栏                                                    */
+/* ══════════════════════════════════════════════════════════════ */
+.search-wrapper {
+  padding:6px; margin-bottom:36px;
+  display:flex; align-items:center; gap:12px;
+}
+.search-icon {
+  margin-left:12px; flex-shrink:0;
+  color:var(--text-dim); display:flex;
+}
+.search-icon svg { width:20px; height:20px; }
+#searchInput {
+  flex:1; background:transparent; border:none; outline:none;
+  font-size:15px; color:var(--text-primary);
+  padding:12px 0;
+}
+#searchInput::placeholder { color:var(--text-dim); }
+.search-clear {
+  margin-right:12px; padding:6px;
+  border-radius:8px; color:var(--text-dim);
+  transition: all .2s; display:none;
+}
+.search-clear.show { display:flex; }
+.search-clear:hover { background:rgba(255,255,255,.08); color:var(--text-primary); }
+.search-count {
+  margin-right:16px; font-size:12px;
+  color:var(--text-dim); white-space:nowrap;
+  display:none;
+}
+.search-count.show { display:block; }
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  📁 分类区域                                                  */
+/* ══════════════════════════════════════════════════════════════ */
+.category {
+  margin-bottom: 48px;
+  /* 滚动渐显初始状态 */
+  opacity:0;
+  transform:translateY(24px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.category.visible {
+  opacity:1;
+  transform:translateY(0);
+}
+.category-header {
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:20px; padding:0 4px;
+}
+.category-header h2 {
+  font-size:20px; font-weight:700;
+  color:var(--text-primary);
+}
+.category-header .cat-line {
+  flex:1; height:1px;
+  background: linear-gradient(90deg, var(--glass-border), transparent);
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  🃏 导航卡片网格                                              */
+/* ══════════════════════════════════════════════════════════════ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  🎴 单个导航卡片                                              */
+/* ══════════════════════════════════════════════════════════════ */
+.nav-card {
+  display:flex; align-items:center; gap:16px;
+  padding:20px 22px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+  position:relative; overflow:hidden;
+  cursor:pointer;
+  /* 初始隐藏，JS添加动画 */
+  opacity:0;
+  transform:translateY(16px);
+}
+.nav-card.animate-in {
+  animation: cardEnter .5s ease forwards;
+}
+@keyframes cardEnter {
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* 卡片顶部高光线 */
+.nav-card::after {
+  content:'';
+  position:absolute; top:0; left:14%; right:14%;
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
+  pointer-events:none;
+}
+
+/* 液态玻璃鼠标跟随高光 */
+.nav-card::before {
+  content:'';
+  position:absolute; inset:0;
+  border-radius:inherit;
+  background: radial-gradient(
+    500px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255,255,255,.07), transparent 40%
+  );
+  opacity:0;
+  transition: opacity .4s ease;
+  pointer-events:none; z-index:1;
+}
+.nav-card:hover::before { opacity:1; }
+
+.nav-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: rgba(255,255,255,.14);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+.nav-card:active {
+  transform: scale(.97) translateY(0);
+  transition-duration: .1s;
+}
+
+.card-icon {
+  width:48px; height:48px; border-radius:14px;
+  background: linear-gradient(135deg, rgba(79,172,254,.12), rgba(0,242,254,.08));
+  border:1px solid rgba(79,172,254,.15);
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; flex-shrink:0;
+  position:relative; z-index:2;
+  transition: transform .3s ease;
+}
+.nav-card:hover .card-icon { transform:scale(1.08); }
+
+.card-info { flex:1; min-width:0; position:relative; z-index:2; }
+.card-title {
+  font-size:15px; font-weight:600;
+  color:var(--text-primary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.card-desc {
+  font-size:13px; color:var(--text-secondary);
+  margin-top:2px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.card-arrow {
+  color:var(--text-dim); font-size:14px;
+  transition: all .3s ease;
+  position:relative; z-index:2; flex-shrink:0;
+}
+.card-arrow svg { width:16px; height:16px; }
+.nav-card:hover .card-arrow {
+  color:var(--accent);
+  transform:translateX(3px);
+}
+
+/* 按钮波纹效果 */
+.ripple {
+  position:absolute; border-radius:50%;
+  background: rgba(255,255,255,.15);
+  transform:scale(0);
+  animation: rippleAnim .6s ease-out forwards;
+  pointer-events:none; z-index:5;
+}
+@keyframes rippleAnim {
+  to { transform:scale(4); opacity:0; }
+}
+
+/* 搜索无结果 */
+.no-results {
+  text-align:center; padding:48px 24px;
+  color:var(--text-dim); font-size:15px;
+  display:none;
+}
+.no-results.show { display:block; }
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  📌 Footer                                                    */
+/* ══════════════════════════════════════════════════════════════ */
+.footer {
+  margin-top:48px; padding:32px 36px;
+  text-align:center; color:var(--text-dim);
+  font-size:13px; line-height:2;
+}
+.footer-links { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+.footer-links a {
+  color:var(--text-secondary);
+  transition: color .2s;
+}
+.footer-links a:hover { color:var(--accent); }
+.footer-copy { margin-top:8px; }
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  ⬆️ 返回顶部按钮                                              */
+/* ══════════════════════════════════════════════════════════════ */
+.back-to-top {
+  position:fixed; bottom:28px; right:28px;
+  z-index:800;
+  width:48px; height:48px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border:1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
+  transition: all .3s ease;
+  color:var(--text-secondary);
+  opacity:0; transform:translateY(20px);
+  pointer-events:none;
+}
+.back-to-top.show {
+  opacity:1; transform:translateY(0);
+  pointer-events:auto;
+}
+.back-to-top:hover {
+  background:var(--glass-bg-hover);
+  color:var(--text-primary);
+  box-shadow: var(--shadow-hover);
+}
+.back-to-top:active { transform:scale(.9); }
+.back-to-top svg { width:20px; height:20px; }
+
+/* ══════════════════════════════════════════════════════════════ */
+/*  📱 响应式适配                                                */
+/* ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .main-content { padding: 72px 16px 32px; }
+  .welcome-card { padding: 36px 24px; }
+  .welcome-title { font-size:26px; }
+  .welcome-logo { width:60px; height:60px; border-radius:16px; }
+  .welcome-logo svg { width:28px; height:28px; }
+  .card-grid { grid-template-columns: 1fr; gap:12px; }
+  .nav-card { padding:16px 18px; }
+  .sidebar-toggle { top:14px; left:14px; width:42px; height:42px; }
+  .back-to-top { bottom:20px; right:20px; width:44px; height:44px; }
+  .search-wrapper { margin-bottom:28px; }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  .card-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1025px) {
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+}
+
+/* 移动端禁用鼠标跟随光效 */
+@media (hover: none) and (pointer: coarse) {
+  .mouse-glow { display:none !important; }
+  .nav-card::before { display:none; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ⏳ 加载动画                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="loadingScreen">
+  <div class="loading-icon">🇮🇸</div>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  <div class="loading-text">冰岛工具箱</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 🎨 背景特效                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<canvas id="particleCanvas"></canvas>
+<div class="bg-orbs">
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+</div>
+<div id="mouseGlow" class="mouse-glow"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 📂 侧边栏                                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+<aside id="sidebar" class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🇮🇸</div>
+    <span class="sidebar-logo-text">冰岛工具箱</span>
+  </div>
+  <div class="sidebar-divider"></div>
+
+  <div class="sidebar-label">导航</div>
+  <a href="#top" class="sidebar-link" data-sidebar-link>
+    <span class="link-icon">🏠</span><span>返回顶部</span>
+  </a>
+  <a href="#dev-tools" class="sidebar-link" data-sidebar-link>
+    <span class="link-icon">🤹‍♀️</span><span>娱乐工具</span>
+  </a>
+  <a href="#daily-tools" class="sidebar-link" data-sidebar-link>
+    <span class="link-icon">👨‍💻</span><span>暴力工具</span>
+  </a>
+  <a href="#entertainment" class="sidebar-link" data-sidebar-link>
+    <span class="link-icon">🍔</span><span>额外工具</span>
+  </a>
+  <a href="#about-site" class="sidebar-link" data-sidebar-link>
+    <span class="link-icon">📌</span><span>站点附属</span>
+  </a>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-label">功能</div>
+
+  <button class="sidebar-link" onclick="document.getElementById('searchInput').focus();closeSidebar();">
+    <span class="link-icon">🔍</span><span>搜索</span>
+  </button>
+  <button class="sidebar-link" onclick="window.scrollTo({top:0,behavior:'smooth'});closeSidebar();">
+    <span class="link-icon">⬆️</span><span>返回顶部</span>
+  </button>
+
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-label">更多</div>
+  <a href="about.html" class="sidebar-link" data-sidebar-link>
+    <span class="link-icon">ℹ️</span><span>关于</span>
+  </a>
+  <a href="settings.html" class="sidebar-link" data-sidebar-link>
+    <span class="link-icon">⚙️</span><span>设置</span>
+  </a>
+
+  <!-- ╔══════════════════════════════════════════╗ -->
+  <!-- ║  📌 新增侧边栏菜单：复制下方代码即可     ║ -->
+  <!-- ╚══════════════════════════════════════════╝ -->
+  <!--
+  <a href="your-page.html" class="sidebar-link" data-sidebar-link>
+    <span class="link-icon">📄</span><span>菜单名称</span>
+  </a>
+  -->
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 🔘 侧边栏开关                                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<button id="sidebarToggle" class="sidebar-toggle" aria-label="菜单">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- 📄 主内容区                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<main class="main-content" id="top">
+
+  <!-- 👋 欢迎卡片 -->
+  <section class="welcome-card glass">
+    <div class="welcome-badge">
+      <span class="status-dot"></span>
+      <span>系统运行正常</span>
+    </div>
+<div class="welcome-logo">
+    <img src="https://i.ibb.co/S70wc8gL/image-download-1785399785055.jpg" style="width:86px;height:86px;object-fit:cover;margin-top:12px;" alt="">
+</div>
+    <h1 class="welcome-title">冰岛</h1>
+    <p class="welcome-subtitle">极速·高效·真实</p>
+    <div class="welcome-meta">
+      <span class="version-badge">v1.0</span>
+      <span class="announce-text">📢 云更新不用额外下载，功能少是在更新</span>
+    </div>
+  </section>
+
+  <!-- 🔍 搜索栏 -->
+  <div class="search-wrapper glass">
+    <span class="search-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    </span>
+    <input type="text" id="searchInput" placeholder="搜索功能名称、描述或分类…" autocomplete="off" spellcheck="false">
+    <span class="search-count" id="searchCount"></span>
+    <button class="search-clear" id="searchClear" title="清除">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- 搜索无结果提示 -->
+  <div class="no-results" id="noResults">😕 没有找到匹配的结果</div>
+
+  <!-- ╔════════════════════════════════════════════════════════╗ -->
+  <!-- ║  📁 分类区域 — 复制整个 <section> 块即可新增分类        ║ -->
+  <!-- ╚════════════════════════════════════════════════════════╝ -->
+
+  <!-- ──────────────── 🔧 开发工具 ──────────────── -->
+  <section class="category" id="dev-tools">
+    <div class="category-header">
+      <h2>🤹‍♀️ 娱乐工具</h2>
+      <div class="cat-line"></div>
+    </div>
+    <div class="card-grid">
+
+      <!-- ╔════════════════════════════════════════════════╗ -->
+      <!-- ║  📋 新增按钮：复制以下整块，修改4项即可         ║ -->
+      <!-- ║  ① title   → 卡片标题                         ║ -->
+      <!-- ║  ② desc    → 卡片描述                         ║ -->
+      <!-- ║  ③ icon    → 图标（emoji / 文字）              ║ -->
+      <!-- ║  ④ url     → href 跳转链接                     ║ -->
+      <!-- ╚════════════════════════════════════════════════╝ -->
+
+      <a class="nav-card" href="setu.html"
+         data-title="代码编辑器" data-desc="在线代码编辑与实时预览" data-category="开发工具">
+        <div class="card-icon">😍</div>
+        <div class="card-info">
+          <h3 class="card-title">随机色图</h3>
+          <p class="card-desc">实时预览回调</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="blbl.html"
+         data-title="JSON 格式化" data-desc="JSON 数据美化、压缩与校验" data-category="开发工具">
+        <div class="card-icon">🔞</div>
+        <div class="card-info">
+          <h3 class="card-title">B里B里</h3>
+          <p class="card-desc">什么东西你比我懂</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+<a class="nav-card" data-title="来点音乐" data-desc="在线音乐播放与收藏" data-category="娱乐工具" id="musicCard">
+<div class="card-icon">🎵</div>
+<div class="card-info">
+<h3 class="card-title">来点音乐</h3>
+<p class="card-desc">在线音乐播放与收藏</p>
+</div>
+<span class="card-arrow">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+</span>
+</a>
+
+<audio id="audioPlayer" src="https://alimov2.a.kwimgs.com/upic/2026/05/20/21/BMjAyNjA1MjAyMTQxMzBfMzYxOTg5ODI3MF8xOTY0NzY0NDg3NDVfMl8z_b_Bdccdc226827fd942f749ec49fdb85752.mp4?tag=1-1785402008-bs-1-yx86ggcpp2-7226d3d6a921c8b9&clientCacheKey=3x3fb3ufvv6xyyy_b.mp3&tt=b&di=781ad387&bp=10004"></audio>
+
+
+<a class="nav-card" href="yandex.com" target="_blank"
+         data-title="正则测试" data-desc="正则表达式在线测试与参考" data-category="开发工具">
+        <div class="card-icon">🔍</div>
+        <div class="card-info">
+          <h3 class="card-title">暗网引擎</h3>
+          <p class="card-desc">暗网搜索引擎各种瓜</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ──────────────── 🧰 日常工具 ──────────────── -->
+  <section class="category" id="daily-tools">
+    <div class="category-header">
+      <h2>👨‍💻 暴力工具</h2>
+      <div class="cat-line"></div>
+    </div>
+    <div class="card-grid">
+
+      <a class="nav-card" href="shuashua.html"
+         data-title="快手秒刷" data-desc="科学计算器与单位换算" data-category="日常工具">
+        <div class="card-icon">🚀</div>
+        <div class="card-info">
+          <h3 class="card-title">快手秒刷</h3>
+          <p class="card-desc">科学计算器与单位换算</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="smsceya.html"
+         data-title="短信测压" data-desc="取色、配色与色值转换" data-category="日常工具">
+        <div class="card-icon">💬</div>
+        <div class="card-info">
+          <h3 class="card-title">短信测压</h3>
+          <p class="card-desc">取色、配色与色值转换</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="zhaoy.html"
+         data-title="照妖魔镜" data-desc="自定义二维码生成与下载" data-category="日常工具">
+        <div class="card-icon">♻️</div>
+        <div class="card-info">
+          <h3 class="card-title">照妖魔镜</h3>
+          <p class="card-desc">自定义二维码生成与下载</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="qb.html"
+         data-title="在线记事本" data-desc="轻量笔记与文本编辑器" data-category="日常工具">
+        <div class="card-icon">🐧</div>
+        <div class="card-info">
+          <h3 class="card-title">Q反手机</h3>
+          <p class="card-desc">轻量笔记与文本编辑器</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ──────────────── 🎮 影音娱乐 ──────────────── -->
+  <section class="category" id="entertainment">
+    <div class="category-header">
+      <h2>🍔 额外工具</h2>
+      <div class="cat-line"></div>
+    </div>
+    <div class="card-grid">
+
+      <a class="nav-card" href="music.html"
+         data-title="音乐播放器" data-desc="在线音乐播放与收藏" data-category="影音娱乐">
+        <div class="card-icon">🎵</div>
+        <div class="card-info">
+          <h3 class="card-title">暴力模块</h3>
+          <p class="card-desc">在线音乐播放与收藏</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="video.html"
+         data-title="视频播放器" data-desc="在线视频播放与管理" data-category="影音娱乐">
+        <div class="card-icon">🎬</div>
+        <div class="card-info">
+          <h3 class="card-title">py脚本</h3>
+          <p class="card-desc">在线视频播放与管理</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="games.html"
+         data-title="在线小游戏" data-desc="经典小游戏合集" data-category="影音娱乐">
+        <div class="card-icon">🕹️</div>
+        <div class="card-info">
+          <h3 class="card-title">这个分类的功能都没更新好</h3>
+          <p class="card-desc">经典小游戏合集</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="wallpaper.html"
+         data-title="壁纸下载" data-desc="高清壁纸资源浏览与下载" data-category="影音娱乐">
+        <div class="card-icon">🖼️</div>
+        <div class="card-info">
+          <h3 class="card-title">壁纸下载</h3>
+          <p class="card-desc">高清壁纸资源浏览与下载</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ──────────────── 📌 关于本站 ──────────────── -->
+  <section class="category" id="about-site">
+    <div class="category-header">
+      <h2>📌 站点附属</h2>
+      <div class="cat-line"></div>
+    </div>
+    <div class="card-grid">
+
+      <a class="nav-card" href="about.html"
+         data-title="关于我们" data-desc="项目介绍与团队信息" data-category="关于本站">
+        <div class="card-icon">✈️</div>
+        <div class="card-info">
+          <h3 class="card-title">回家的路</h3>
+          <p class="card-desc">频道@yfqy77</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="help.html"
+         data-title="使用帮助" data-desc="常见问题与使用指南" data-category="关于本站">
+        <div class="card-icon">👁️‍🗨️</div>
+        <div class="card-info">
+          <h3 class="card-title">黑客源码</h3>
+          <p class="card-desc">频道@hefaym</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="changelog.html"
+         data-title="更新日志" data-desc="版本更新记录与路线图" data-category="关于本站">
+        <div class="card-icon">📋</div>
+        <div class="card-info">
+          <h3 class="card-title">更新日志</h3>
+          <p class="card-desc">版本更新记录与路线图</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+      <a class="nav-card" href="contact.html"
+         data-title="联系方式" data-desc="反馈建议与联系我们" data-category="关于本站">
+        <div class="card-icon">✉️</div>
+        <div class="card-info">
+          <h3 class="card-title">联系方式</h3>
+          <p class="card-desc">反馈建议与联系我们</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ╔══════════════════════════════════════════════════════════╗ -->
+  <!-- ║  📁 新增分类：复制以下整个 section 块并修改               ║ -->
+  <!-- ╚══════════════════════════════════════════════════════════╝ -->
+  <!--
+  <section class="category" id="new-category">
+    <div class="category-header">
+      <h2>📂 分类名称</h2>
+      <div class="cat-line"></div>
+    </div>
+    <div class="card-grid">
+      <a class="nav-card" href="your-page.html"
+         data-title="按钮名称" data-desc="按钮描述" data-category="分类名称">
+        <div class="card-icon">📦</div>
+        <div class="card-info">
+          <h3 class="card-title">按钮名称</h3>
+          <p class="card-desc">按钮描述</p>
+        </div>
+        <span class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+    </div>
+  </section>
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- 📌 Footer                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <footer class="footer glass">
+    <div class="footer-links">
+      <a href="about.html">关于</a>
+      <a href="help.html">帮助</a>
+      <a href="contact.html">联系</a>
+      <a href="changelog.html">更新日志</a>
+    </div>
+    <div class="footer-copy">
+      © 2024-2026 Navigator · 保留所有权利<br>
+      <span style="opacity:.6" id="timeText">最后更新: 加载中 · v1.0</span>
+
+<script>
+function setRealTime(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    document.getElementById('timeText').innerText = `最后更新: ${y}年${m}月${day}日 · v1.0`;
+}
+setRealTime();
+</script>
+
+    </div>
+  </footer>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ⬆️ 返回顶部                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<button id="backToTop" class="back-to-top glass" aria-label="返回顶部">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</button>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 💻 JavaScript                                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  ⚙️ 配置区 — 可按需修改                                    */
+  /* ═══════════════════════════════════════════════════════════ */
+  const CONFIG = {
+    particleCount:   70,       // 粒子数量
+    particleMaxDist: 120,      // 粒子连线最大距离
+    particleSpeed:   0.3,      // 粒子移动速度
+    particleOpacity: 0.35,     // 粒子透明度
+    loadingDelay:   1200,      // 加载动画时长 ms
+    scrollRevealThreshold: 0.08, // 滚动渐显触发阈值
+    backToTopOffset: 500,      // 返回顶部按钮出现的滚动距离
+  };
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  ⏳ 加载动画                                                */
+  /* ═══════════════════════════════════════════════════════════ */
+  window.addEventListener('load', function(){
+    setTimeout(function(){
+      var ls = document.getElementById('loadingScreen');
+      if(ls) ls.classList.add('hide');
+    }, CONFIG.loadingDelay);
+  });
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  🎨 粒子背景系统（Canvas）                                  */
+  /* ═══════════════════════════════════════════════════════════ */
+  var canvas = document.getElementById('particleCanvas');
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+  var animFrame;
+
+  function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles(){
+    particles = [];
+    var count = Math.min(CONFIG.particleCount, Math.floor(canvas.width * canvas.height / 18000));
+    for(var i = 0; i < count; i++){
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * CONFIG.particleSpeed,
+        vy: (Math.random() - 0.5) * CONFIG.particleSpeed,
+        r: Math.random() * 1.5 + 0.5,
+        o: Math.random() * CONFIG.particleOpacity + 0.1
+      });
+    }
+  }
+
+  function drawParticles(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var maxDist = CONFIG.particleMaxDist;
+
+    for(var i = 0; i < particles.length; i++){
+      var p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+
+      // 边界反弹
+      if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+      // 绘制粒子
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(180,200,255,' + p.o + ')';
+      ctx.fill();
+
+      // 绘制连线
+      for(var j = i + 1; j < particles.length; j++){
+        var p2 = particles[j];
+        var dx = p.x - p2.x;
+        var dy = p.y - p2.y;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if(dist < maxDist){
+          var alpha = (1 - dist / maxDist) * 0.12;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = 'rgba(150,180,255,' + alpha + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    animFrame = requestAnimationFrame(drawParticles);
+  }
+
+  resizeCanvas();
+  createParticles();
+  drawParticles();
+
+  var resizeTimer;
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){
+      resizeCanvas();
+      createParticles();
+    }, 200);
+  });
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  🖱️ 鼠标跟随光效（桌面端）                                  */
+  /* ═══════════════════════════════════════════════════════════ */
+  var mouseGlow = document.getElementById('mouseGlow');
+  var isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+  if(!isTouchDevice && mouseGlow){
+    document.addEventListener('mousemove', function(e){
+      mouseGlow.style.left = e.clientX + 'px';
+      mouseGlow.style.top = e.clientY + 'px';
+      if(!mouseGlow.classList.contains('active')) mouseGlow.classList.add('active');
+    });
+    document.addEventListener('mouseleave', function(){
+      mouseGlow.classList.remove('active');
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  🎴 卡片鼠标跟随高光 + 液态玻璃反射                          */
+  /* ═══════════════════════════════════════════════════════════ */
+  document.addEventListener('mousemove', function(e){
+    var cards = document.querySelectorAll('.nav-card');
+    for(var i = 0; i < cards.length; i++){
+      var card = cards[i];
+      var rect = card.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      card.style.setProperty('--mx', x + 'px');
+      card.style.setProperty('--my', y + 'px');
+    }
+  });
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  📂 侧边栏开关                                              */
+  /* ═══════════════════════════════════════════════════════════ */
+  var sidebar = document.getElementById('sidebar');
+  var sidebarBackdrop = document.getElementById('sidebarBackdrop');
+  var sidebarToggle = document.getElementById('sidebarToggle');
+
+  function openSidebar(){
+    sidebar.classList.add('open');
+    sidebarBackdrop.classList.add('open');
+  }
+  function closeSidebar(){
+    sidebar.classList.remove('open');
+    sidebarBackdrop.classList.remove('open');
+  }
+  // 暴露给全局供 onclick 使用
+  window.closeSidebar = closeSidebar;
+
+  sidebarToggle.addEventListener('click', function(){
+    if(sidebar.classList.contains('open')) closeSidebar();
+    else openSidebar();
+  });
+  sidebarBackdrop.addEventListener('click', closeSidebar);
+
+  // 侧边栏锚点链接点击后关闭
+  var sidebarLinks = document.querySelectorAll('[data-sidebar-link]');
+  for(var i = 0; i < sidebarLinks.length; i++){
+    sidebarLinks[i].addEventListener('click', function(){
+      setTimeout(closeSidebar, 150);
+    });
+  }
+
+  // ESC 关闭侧边栏
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeSidebar();
+  });
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  🔍 搜索功能（实时过滤）                                     */
+  /* ═══════════════════════════════════════════════════════════ */
+  var searchInput = document.getElementById('searchInput');
+  var searchClear = document.getElementById('searchClear');
+  var searchCount = document.getElementById('searchCount');
+  var noResults = document.getElementById('noResults');
+  var allCards = document.querySelectorAll('.nav-card');
+  var allCategories = document.querySelectorAll('.category');
+
+  function performSearch(){
+    var query = searchInput.value.toLowerCase().trim();
+    var totalVisible = 0;
+
+    // 过滤卡片
+    for(var i = 0; i < allCards.length; i++){
+      var card = allCards[i];
+      var title = (card.dataset.title || '').toLowerCase();
+      var desc = (card.dataset.desc || '').toLowerCase();
+      var cat = (card.dataset.category || '').toLowerCase();
+      var match = !query || title.indexOf(query) !== -1 || desc.indexOf(query) !== -1 || cat.indexOf(query) !== -1;
+      card.style.display = match ? '' : 'none';
+      if(match) totalVisible++;
+    }
+
+    // 隐藏空分类
+    for(var j = 0; j < allCategories.length; j++){
+      var section = allCategories[j];
+      var visibleInSection = section.querySelectorAll('.nav-card:not([style*="display: none"])');
+      section.style.display = visibleInSection.length > 0 ? '' : 'none';
+    }
+
+    // 搜索计数 & 无结果提示
+    if(query){
+      searchCount.classList.add('show');
+      searchCount.textContent = totalVisible + ' 个结果';
+      searchClear.classList.add('show');
+    } else {
+      searchCount.classList.remove('show');
+      searchClear.classList.remove('show');
+    }
+    noResults.classList.toggle('show', query && totalVisible === 0);
+  }
+
+  searchInput.addEventListener('input', performSearch);
+  searchClear.addEventListener('click', function(){
+    searchInput.value = '';
+    performSearch();
+    searchInput.focus();
+  });
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  ✨ 卡片入场动画 + 滚动渐显                                  */
+  /* ═══════════════════════════════════════════════════════════ */
+  // 卡片入场动画（分组延迟）
+  function initCardAnimations(){
+    var cards = document.querySelectorAll('.nav-card');
+    var currentDelay = 0;
+    var lastTop = -1;
+
+    for(var i = 0; i < cards.length; i++){
+      var card = cards[i];
+      var top = card.getBoundingClientRect().top;
+      // 如果和上一张卡片的 top 差距大，说明进入了新行/新分类，重置延迟
+      if(lastTop !== -1 && Math.abs(top - lastTop) > 60){
+        currentDelay = 0;
+      }
+      card.classList.add('animate-in');
+      card.style.animationDelay = (0.08 + currentDelay * 0.05) + 's';
+      currentDelay++;
+      lastTop = top;
+    }
+  }
+
+  // 滚动渐显（分类区域）
+  function initScrollReveal(){
+    var observer = new IntersectionObserver(function(entries){
+      for(var i = 0; i < entries.length; i++){
+        if(entries[i].isIntersecting){
+          entries[i].target.classList.add('visible');
+          observer.unobserve(entries[i].target);
+        }
+      }
+    }, { threshold: CONFIG.scrollRevealThreshold });
+
+    var sections = document.querySelectorAll('.category');
+    for(var i = 0; i < sections.length; i++){
+      observer.observe(sections[i]);
+    }
+  }
+
+  // 页面加载后初始化
+  setTimeout(function(){
+    initCardAnimations();
+    initScrollReveal();
+  }, CONFIG.loadingDelay + 100);
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  💧 水波纹 / 波纹点击反馈                                    */
+  /* ═══════════════════════════════════════════════════════════ */
+  document.addEventListener('click', function(e){
+    var card = e.target.closest('.nav-card');
+    if(!card) return;
+    var ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    var rect = card.getBoundingClientRect();
+    var size = Math.max(rect.width, rect.height) * 2;
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+    card.appendChild(ripple);
+    setTimeout(function(){ ripple.remove(); }, 700);
+  });
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  ⬆️ 返回顶部按钮                                            */
+  /* ═══════════════════════════════════════════════════════════ */
+  var backToTop = document.getElementById('backToTop');
+  var scrollTimer;
+
+  window.addEventListener('scroll', function(){
+    if(scrollTimer) return;
+    scrollTimer = requestAnimationFrame(function(){
+      if(window.scrollY > CONFIG.backToTopOffset){
+        backToTop.classList.add('show');
+      } else {
+        backToTop.classList.remove('show');
+      }
+      scrollTimer = null;
+    });
+  }, { passive: true });
+
+  backToTop.addEventListener('click', function(){
+    window.scrollTo({ top:0, behavior:'smooth' });
+  });
+
+  /* ═══════════════════════════════════════════════════════════ */
+  /*  🔗 平滑锚点滚动                                            */
+  /* ═══════════════════════════════════════════════════════════ */
+  document.addEventListener('click', function(e){
+    var link = e.target.closest('a[href^="#"]');
+    if(!link) return;
+    var targetId = link.getAttribute('href');
+    if(targetId === '#top'){
+      e.preventDefault();
+      window.scrollTo({ top:0, behavior:'smooth' });
+      return;
+    }
+    var target = document.querySelector(targetId);
+    if(target){
+      e.preventDefault();
+      var offset = target.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: offset, behavior:'smooth' });
+    }
+  });
+
+})();
+</script>
+
+<script>
+const musicCard = document.getElementById('musicCard');
+const audio = document.getElementById('audioPlayer');
+const iconDom = musicCard.querySelector('.card-icon');
+let isPlay = false;
+
+musicCard.onclick = function(e){
+    e.preventDefault();
+    if(isPlay){
+        audio.pause();
+        iconDom.innerHTML = '🎵';
+        isPlay = false;
+    }else{
+        audio.play();
+        iconDom.innerHTML = '⏸';
+        isPlay = true;
+    }
+}
+</script>
+
+
+
+</body>
+</html>
