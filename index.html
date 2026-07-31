@@ -1092,13 +1092,21 @@ setRealTime();
   /* ═══════════════════════════════════════════════════════════ */
   /*  ⏳ 加载动画                                                */
   /* ═══════════════════════════════════════════════════════════ */
-  window.addEventListener('load', function(){
-    setTimeout(function(){
-      var ls = document.getElementById('loadingScreen');
-      if(ls) ls.classList.add('hide');
-    }, CONFIG.loadingDelay);
-  });
+  function hideLoading() {
+    var ls = document.getElementById('loadingScreen');
+    if (ls && !ls.classList.contains('hide')) {
+        ls.classList.add('hide');
+    }
+}
 
+document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(hideLoading, CONFIG.loadingDelay);
+});
+
+window.addEventListener('load', hideLoading);
+
+// 最后再加一个强制兜底，避免任何异常导致一直卡住
+setTimeout(hideLoading, 5000);
   /* ═══════════════════════════════════════════════════════════ */
   /*  🎨 粒子背景系统（Canvas）                                  */
   /* ═══════════════════════════════════════════════════════════ */
