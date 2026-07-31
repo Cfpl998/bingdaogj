@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>更新日志</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+body{
+    min-height:100vh;
+    background: linear-gradient(135deg,#251463,#5024b8,#27175e);
+    padding:30px 16px;
+    color:#ffffff;
+}
+.container{
+    max-width:700px;
+    margin:0 auto;
+}
+.page-title{
+    text-align:center;
+    font-size:28px;
+    font-weight:600;
+    margin-bottom:30px;
+    letter-spacing:2px;
+    text-shadow:0 2px 12px rgba(140,100,255,0.4);
+}
+.log-card{
+    background:rgba(255,255,255,0.07);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(200,170,255,0.18);
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:16px;
+    transition:0.28s ease;
+}
+.log-card:hover{
+    background:rgba(255,255,255,0.11);
+    transform:translateY(-3px);
+    box-shadow:0 10px 30px rgba(90,40,190,0.25);
+}
+.version-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:12px;
+}
+.ver-name{
+    font-size:18px;
+    font-weight:600;
+    color:#d8c9ff;
+}
+.ver-date{
+    font-size:13px;
+    opacity:0.7;
+}
+.update-list{
+    padding-left:18px;
+}
+.update-list li{
+    line-height:1.7;
+    font-size:15px;
+    margin:6px 0;
+    opacity:0.92;
+}
+.update-list .add{color:#94ffb8}
+.update-list .fix{color:#ffdd88}
+.update-list .opt{color:#b8d6ff}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1 class="page-title">📜 更新日志</h1>
+
+    <div class="log-card">
+        <div class="version-header">
+            <div class="ver-name">V1.3</div>
+            <div class="ver-date">2026-?-?</div>
+        </div>
+        <ul class="update-list">
+            <li class="add">【新增】敬请期待</li>
+            <li class="add">【新增】敬请期待</li>
+            <li class="opt">【优化】敬请期待</li>
+            <li class="fix">【修复】敬请期待</li>
+        </ul>
+    </div>
+
+    <div class="log-card">
+        <div class="version-header">
+            <div class="ver-name">V1.1</div>
+            <div class="ver-date">2026-07-29</div>
+        </div>
+        <ul class="update-list">
+            <li class="add">【新增】额外工具内所有功能</li>
+            <li class="add">【新增】ddos</li>
+            <li class="opt">【修复】加载卡死问题</li>
+            <li class="fix">【待修复】有个bug打算1.2修复就是学习资料无法下载</li>
+        </ul>
+    </div>
+
+    <div class="log-card">
+        <div class="version-header">
+            <div class="ver-name">V1.0.0</div>
+            <div class="ver-date">2026-07-29</div>
+        </div>
+        <ul class="update-list">
+            <li class="add">初始版本</li>
+            <li class="opt">初始功能</li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>
