@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>导航主页</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+body{
+    min-height:100vh;
+    background:url("https://rimg.zhuqiy.top/api/random?type=mb") center/cover no-repeat fixed;
+    color:#fff;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+/* 欢迎卡片 */
+.welcome-card{
+    width:100%;
+    max-width:720px;
+    padding:28px 24px;
+    margin-bottom:18px;
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:18px;
+    text-align:center;
+}
+.welcome-card h1{
+    font-size:26px;
+    font-weight:600;
+    margin-bottom:8px;
+    text-shadow:0 2px 10px rgba(0,0,0,0.3);
+}
+.welcome-card p{
+    font-size:14px;
+    opacity:0.75;
+}
+
+/* 搜索框 */
+.search-box{
+    width:100%;
+    max-width:720px;
+    margin-bottom:18px;
+    display:flex;
+    gap:10px;
+}
+.search-box input{
+    flex:1;
+    padding:14px 18px;
+    background:rgba(255,255,255,0.1);
+    backdrop-filter:blur(16px) saturate(180%);
+    -webkit-backdrop-filter:blur(16px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:12px;
+    color:#fff;
+    font-size:15px;
+    outline:none;
+}
+.search-box input::placeholder{color:rgba(255,255,255,0.5)}
+.search-box button{
+    padding:0 22px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(16px) saturate(180%);
+    -webkit-backdrop-filter:blur(16px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.2);
+    border-radius:12px;
+    color:#fff;
+    font-size:15px;
+    cursor:pointer;
+    transition:all .25s;
+}
+.search-box button:hover{background:rgba(255,255,255,0.25)}
+
+/* 按钮容器卡片 */
+.btn-container{
+    width:100%;
+    max-width:720px;
+    flex:1;
+    max-height:calc(100vh - 260px);
+    overflow-y:auto;
+    padding:20px;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(24px) saturate(180%);
+    -webkit-backdrop-filter:blur(24px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+.btn-container::-webkit-scrollbar{width:4px}
+.btn-container::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:4px}
+
+/* 长按钮 */
+.nav-btn{
+    display:block;
+    width:100%;
+    padding:16px 20px;
+    text-align:left;
+    text-decoration:none;
+    color:#fff;
+    font-size:15px;
+    background:rgba(255,255,255,0.12);
+    backdrop-filter:blur(12px) saturate(180%);
+    -webkit-backdrop-filter:blur(12px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.18);
+    border-radius:12px;
+    cursor:pointer;
+    transition:all .3s ease;
+    opacity:0;
+    transform:scale(0.95);
+    animation:fadeIn .4s ease forwards;
+}
+.nav-btn.hidden{
+    display:none;
+}
+.nav-btn:hover{
+    background:rgba(255,255,255,0.22);
+    transform:translateY(-2px);
+    box-shadow:0 8px 24px rgba(0,0,0,0.15);
+}
+
+@keyframes fadeIn{
+    to{opacity:1;transform:scale(1)}
+}
+
+/* 按钮依次延迟入场 */
+.nav-btn:nth-child(1){animation-delay:.05s}
+.nav-btn:nth-child(2){animation-delay:.1s}
+.nav-btn:nth-child(3){animation-delay:.15s}
+.nav-btn:nth-child(4){animation-delay:.2s}
+.nav-btn:nth-child(5){animation-delay:.25s}
+.nav-btn:nth-child(6){animation-delay:.3s}
+.nav-btn:nth-child(7){animation-delay:.35s}
+.nav-btn:nth-child(8){animation-delay:.4s}
+.nav-btn:nth-child(9){animation-delay:.45s}
+.nav-btn:nth-child(10){animation-delay:.5s}
+</style>
+</head>
+<body>
+
+<div class="welcome-card">
+    <h1>冰岛学习网</h1>
+    <p>各种各样的学习资料，冰岛收集</p>
+</div>
+
+<div class="search-box">
+    <input type="text" id="searchInput" placeholder="输入关键词搜索...">
+    <button onclick="doSearch()">搜索</button>
+</div>
+
+<div class="btn-container" id="btnBox">
+    <!-- 复制下面这行添加按钮，修改href和文字即可 -->
+    <a class="nav-btn" href="https://u4969716.dmpdmp.com/file/?AmQHOV1sAzIACQA4BDFXO1doBj5WPVdjADdWflZrUyIBalIjDzQCPwY8CzhXXFA4VWtTa14yVmRXY1FjUjoHMQI1B2ZdNwNxADAAJQRtV2dXOAYwVjFXZwAyVmBWOVNhASdSdQ8iAmsGYgttVzFQZ1UgU2ZeNlZ7V2NRZ1IhB2ACYQdjXWIDYQBlAGAEZFdgV24GN1Y+V2UAM1ZiVjlTZQFjUmQPYQJiBmALP1dlUDdVbVNjXmVWZldkUWdSOgcoAmMHIF1rA3EAIwAlBDVXJFdkBmdWNFdhAD5WZlYzU2UBMFIzD3QCIgY5CzBXZlA3VTJTZ142VmxXZVFjUjsHPwI3B2FdMQNxADAAOgQnV2tXPAY0VjFXYAAzVmVWMlNrATFSMw90AiMGIAsqVz5QYFU4U25eNFZgV2FRZVI6BzUCNgd2XXUDPgAmAGsEY1dvVyMGMlYxV2EAKVZoVjtTfAEzUjcPYAJwBjQLMVc+UGE=" target="_blank">其妙生活</a>
+    <a class="nav-btn" href="https://u4969716.dmpdmp.com/file/?CG5TbVprDz5VXFFpAzYBbVBvAzsDaFZhBTpVfVRpVyZQOwBxCzACPwE7V2RQW1U9VWsAOF8zAjBXY1dlUTkBNwg6UzVaMQ99VWVRdANqATRQOQM/A25WbAU6VWpUPVduUHYAJwsmAmsBZVcxUDZVYlUgADVfNwIvV2NXYVEiATcIbVM9WmUPPlU0UTQDZwFiUD8DMwM9VmEFZ1U1VGlXYFAzAGULbgJjAWBXMlA8VTBVOwA8XzICZldoV2ZROwEuCGlTdFpsD31VdlF0AzIBclBjA2IDYVZgBTtVZVQxV2FQYQBhC3ACIgE+V2xQYVUyVTIANF83AjhXZVdlUTgBOQg+UzBaPg99VWVRawMgAT1QOwMxA2RWYQU2VWZUMVdmUGMAbgtwAiMBJ1d2UDlVZVU4AD1fNQI0V2FXY1E/ATIIPFMiWnIPMlVzUToDZAE5UCQDNwNkVmAFLFVrVDlXeFBiAGULZAJwATNXbVA5VWQ=" target="_blank">夜袭姬之愿</a>
+    <a class="nav-btn" href="https://u4969716.dmpdmp.com/file/?VzEHOQk4U2IFDAI6Cz5TP1plDzdSOVFmUGUAKFZrAXAAa1UkCjEOM1JoBjUHDFE5BjhVbVI+CzkHMgA3VjoDO1duB2cJYlMhBTUCJwtiU2ZaNA88UjhRalBuAD5WPQEyACZVcgonDmdSNgZgB2FRZgZzVWBSOgsmBzIAMFYlAzdXbwc1CWdTZQVlAjALOlM2WmUPOVJvUWNQMgA2VjwBMwBlVTYKYQ5sUmYGZQcwUWYGalU0UmwLPwc5AGNWbgMsVzYHIAk/UyEFJgInCzpTIFppD25SMFFnUG4AMFYzATcAMVU0CnEOLlJtBj0HNlE2BmFVYVI6CzEHNQAyVj8DO1dgB2MJY1MhBTUCOAsoU29aMQ89UjVRZlBjADNWMwEwADdVMApxDi9SdAYnB25RYQZrVWhSOAs5BzYAM1Y9AzVXZgd2CSFTbgUjAmkLbFNrWi4PO1I1UWdQeQA+VjsBLgAyVTAKZQ58UmAGPAduUWA=" target="_blank">危险的搜查官</a>
+    <a class="nav-btn" href="https://wwa.oxbnw.com/f/DDRqce/492.apk" target="_blank">我召唤的魅魔是个菜鸟</a>
+    <a class="nav-btn" href="https://wwa.oxbnw.com/f/oq4ATL/480.apk" target="_blank">淫星酒店</a>
+    <a class="nav-btn" href="https://u4969716.dmpdmp.com/file/?BmAFOwg5AjMJAFNrAjdcMFFuBT1QO1NjCzkGLldqUiMGbQd2DTYDPgA6UGMED1E5UmxUbF8yBT5VZ1JmXDVSYQY3BWYIZgJwCTlTdgJrXGxRPwUxUD9TYws+BjVXOVJhBiAHIA0gA2oAZFA2BGJRZlInVGFfNwUoVWJSYlwvUjUGMgVjCGICMAk7UzcCN1xrUTgFNVA5U2cLbgZkV25SZAY2BzINZQNnADJQZwQ0UTNSaVRlXzAFMVUwUjVcMlJ9BmcFIgg+AnAJKlN2AjNcL1FiBWRQMlNlCzUGNlcyUmQGNwdmDXYDIwA/UGsENVE2UjVUYF83BT9VZ1JgXDZSYwY3BWsIZAJwCTlTaQIhXGBROgU3UDdTZAs4BjVXMlJnBjAHaQ12AyIAJlBxBG1RYVI/VGlfMwU0VWFSY1wwUmoGMAV0CCACPwkvUzgCZVxkUSUFMVA3U2ULIgY4VzpSfQY0B2INYgNxADJQagRtUWA=" target="_blank">调教小猫的21种方式</a>
+    <a class="nav-btn" href="https://u4969716.dmpdmp.com/file/?UzVSbFtqBjcACVBoUWQAbFZpVGxTOAMwCz9ReVNuUiMEbwBxCTIFOAQ+UGMBClc/VGoDOwBtCjFQZVZpUTgHNFNrUjNbNQZ0ADBQdVE4ADJWNVRgUzsDMQs1UWVTOVJkBCIAJwkkBWwEYFA2AWdXYFQhAzYAaQonUGVWaFEiBzNTYFI3WzQGZABvUGVRNQBjVj1UYlNpAzALOlExUz9SYAQ0AGAJbQUwBGJQMwEwV25UNwMwAG0KOFAzVmhROQcoUzJSdVttBnQAI1B1UWAAc1ZlVDVTMQM1CzVRYVM2UmQENQBhCXIFJQQ7UGsBMFcwVDMDNwBoCjBQYlZkUTsHNlNgUjVbNgZ0ADBQalFyADxWPVRmUzQDNAs4UWJTNlJlBD0AYglyBSQEIlBxAWhXZ1Q5Az4AbQo+UGJWY1E8BzdTYFIjW3MGOwAmUDtRNgA4ViJUYFM0AzULIlFvUz5SfQQ2AGUJZgV3BDZQagFoV2Y=" target="_blank">芙宁娜大冒险</a>
+    <a class="nav-btn" href="https://u4969716.dmpdmp.com/file/?VDIFOwk4UGEDClRsUWRcMAA/U2tfNAAyCzQELAA9VyZTOFYnXWYBPAI4AzAED1w0W2VUbARpCzABNAA/UzsAN1RgBWMJbFAiAzNUcVE4XGwAYlNmXzgAMQs9BDsAbVdmU3VWcV1wAWgCZgNlBGJca1suVGEEbQsmATQAPlMgAGVUbQUwCWxQZwNhVDFRM1w4AD9TYF9lADULPwQ1AGlXYFM3VjZdZgFlAjEDYgRpXGlbN1RlBG8LPAEyADBTPAAvVDUFIgk/UCIDIFRxUWBcLwAzUzJfPQA2CzUENABlV2FTYlY3XSYBIQI9AzgENVw7WzxUYARsCzEBMwAyUzkAMVRnBWQJZVAiAzNUblFyXGAAa1NhXzgANws4BDcAZVdgU2pWMF0mASACJAMiBG1cbFs2VGkEaQs/ATMAN1M7ADdUZgV0CSFQbQMlVD9RNlxkAHRTZ184ADYLIgQ6AG1XeFNhVjNdMgFzAjADOQRtXG0=" target="_blank">与偶像的合宿生活</a>
+       <a class="nav-btn" href="https://www.weibo.com" target="_blank">等待更新更多</a>
+    <!-- 复制上面这行添加按钮 -->
+</div>
+
+<script>
+function doSearch(){
+    const kw = document.getElementById('searchInput').value.trim().toLowerCase();
+    const buttons = document.querySelectorAll('.nav-btn');
+    buttons.forEach(btn=>{
+        const text = btn.innerText.toLowerCase();
+        if(text.includes(kw)){
+            btn.classList.remove('hidden');
+        }else{
+            btn.classList.add('hidden');
+        }
+    });
+}
+document.getElementById('searchInput').addEventListener('keydown',e=>{
+    if(e.key==='Enter') doSearch();
+});
+
+const box = document.getElementById('btnBox');
+const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+        if(entry.isIntersecting){
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'scale(1)';
+        }
+    });
+},{threshold:0.1,root:box});
+
+document.querySelectorAll('.nav-btn').forEach(btn=>observer.observe(btn));
+</script>
+
+</body>
+</html>
